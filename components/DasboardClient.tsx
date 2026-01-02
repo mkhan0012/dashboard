@@ -202,7 +202,10 @@ export default function Dashboard({ initialApps }: { initialApps: any[] }) {
                     <td className="p-5">
                       <StatusBadge status={app.status} />
                     </td>
-                    <td className="p-5 text-right pr-8 text-zinc-600 font-mono text-xs group-hover:text-zinc-400">{app.formattedDate}</td>
+                    <td className="p-5 text-right pr-8 text-zinc-600 font-mono text-xs group-hover:text-zinc-400">
+                        {/* Handle string or date object safely */}
+                        {new Date(app.emailDate).toLocaleDateString()}
+                    </td>
                   </motion.tr>
                 ))}
               </AnimatePresence>
@@ -309,6 +312,8 @@ export default function Dashboard({ initialApps }: { initialApps: any[] }) {
                     if(confirm("Permanently delete?")) {
                       await deleteApplication(selectedApp._id);
                       setSelectedApp(null);
+                      // Force refresh or update local state logic here if needed
+                      window.location.reload(); 
                     }
                   }}
                   className="flex items-center gap-2 text-sm font-medium text-red-500/70 hover:text-red-400 px-4 py-2 hover:bg-red-950/30 rounded-lg transition-colors"
