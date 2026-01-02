@@ -1,40 +1,49 @@
-import NextAuth from "next-auth"
-import Google from "next-auth/providers/google"
+import NextAuth from "next-auth";
+import Google from "next-auth/providers/google";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      clientId: process.env.AUTH_GOOGLE_ID,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET,
       authorization: {
         params: {
-          // Request access to read emails and get user profile
-          scope: "openid email profile https://www.googleapis.com/auth/gmail.readonly",
-          access_type: "offline", // Essential for getting a refresh token
-          prompt: "consent",      // Force consent screen to ensure refresh token is returned
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code",
+          scope: "openid profile email https://www.googleapis.com/auth/gmail.readonly",
         },
       },
     }),
   ],
+  secret: process.env.AUTH_SECRET,
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60,
+  },
   callbacks: {
-    async jwt({ token, account }) {
-      // Initial sign in
+    async session({ session, token }) {
+      if (session.user) {
+        // @ts-ignore
+        session.accessToken = token.accessToken;
+        // @ts-ignore
+        session.refreshToken = token.refreshToken;
+        
+        // ✅ FIX: Force it to be a string, or fallback to empty string
+        session.user.email = (token.email as string) || ""; 
+      }
+      return session;
+    },
+    async jwt({ token, account, user }) {
       if (account) {
         token.accessToken = account.access_token;
         token.refreshToken = account.refresh_token;
-        // token.expiresAt = account.expires_at; // Optional: handle token rotation later if needed
+      }
+      if (user) {
+        // ✅ FIX: Fallback to empty string if email is null/undefined
+        token.email = user.email || ""; 
       }
       return token;
     },
-    async session({ session, token }) {
-      // Send properties to the client, like an access_token from a provider.
-      // @ts-ignore
-      session.accessToken = token.accessToken as string;
-      return session;
-    },
   },
-  session: {
-    strategy: "jwt", // Use JWT (default) instead of database sessions for simplicity
-  },
-  secret: process.env.AUTH_SECRET,
-})
+});

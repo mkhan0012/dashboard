@@ -1,13 +1,23 @@
 "use client";
 
-import Link from "next/link";
+import { login, logout, getUserSession } from "@/app/actions"; 
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles, Mail, BrainCircuit, Zap, CheckCircle2, PlayCircle } from "lucide-react";
+import { 
+  ArrowRight, Sparkles, Mail, BrainCircuit, Zap, CheckCircle2, 
+  PlayCircle, Search, Bell, LogOut, User, MousePointerClick, RefreshCw 
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 
 export default function LandingPage() {
-  
-  // Function to handle smooth scrolling for "View Demo"
+  const [user, setUser] = useState<any>(undefined);
+
+  // Check Login Status on Load
+  useEffect(() => {
+    getUserSession().then((u) => setUser(u));
+  }, []);
+
   const scrollToDemo = () => {
     const demoSection = document.getElementById("demo-section");
     if (demoSection) {
@@ -34,15 +44,41 @@ export default function LandingPage() {
             JobTracker
           </span>
         </div>
+        
         <div className="flex items-center gap-4">
-          <Link href="/DasboardClient" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">
-            Login
-          </Link>
-          <Link href="/dashboard/DasboardClient">
-            <Button className="bg-white text-zinc-950 hover:bg-zinc-200 rounded-full px-6 font-semibold transition-all hover:scale-105">
-              Launch App
-            </Button>
-          </Link>
+          {user === undefined ? (
+             <div className="w-24 h-10" />
+          ) : user ? (
+             <div className="flex items-center gap-4 animate-in fade-in duration-500">
+                <div className="hidden md:flex items-center gap-2 text-sm font-medium text-zinc-300 bg-zinc-900/50 px-3 py-1.5 rounded-full border border-zinc-800">
+                   <User size={14} className="text-indigo-400" />
+                   {user.email?.split('@')[0]}
+                </div>
+                <form action={logout}>
+                   <button type="submit" className="text-xs font-bold text-zinc-500 hover:text-red-400 transition-colors flex items-center gap-1">
+                      <LogOut size={14} /> Logout
+                   </button>
+                </form>
+                <Link href="/dashboard">
+                   <Button className="bg-indigo-600 hover:bg-indigo-500 rounded-full px-6 text-white shadow-lg shadow-indigo-500/20">
+                      Dashboard
+                   </Button>
+                </Link>
+             </div>
+          ) : (
+             <>
+               <form action={login}>
+                 <button type="submit" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">
+                   Login
+                 </button>
+               </form>
+               <form action={login}>
+                 <Button type="submit" className="bg-white text-zinc-950 hover:bg-zinc-200 rounded-full px-6 font-semibold transition-all hover:scale-105">
+                   Launch App
+                 </Button>
+               </form>
+             </>
+          )}
         </div>
       </nav>
 
@@ -54,7 +90,6 @@ export default function LandingPage() {
           transition={{ duration: 0.5 }}
           className="space-y-6"
         >
-          {/* Version Badge */}
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900/50 border border-zinc-800 text-xs font-medium text-indigo-400 mb-4 hover:border-indigo-500/50 transition-colors cursor-default">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
@@ -74,11 +109,19 @@ export default function LandingPage() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
-            <Link href="/dashboard">
-              <Button size="lg" className="h-12 px-8 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-lg shadow-[0_0_30px_rgba(79,70,229,0.3)] transition-all hover:scale-105 hover:shadow-indigo-500/40">
-                Get Started for Free <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
+            {user ? (
+               <Link href="/dashboard">
+                  <Button size="lg" className="h-12 px-8 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-lg shadow-[0_0_30px_rgba(79,70,229,0.3)] transition-all hover:scale-105 hover:shadow-indigo-500/40">
+                     Open Dashboard <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+               </Link>
+            ) : (
+               <form action={login}>
+                  <Button type="submit" size="lg" className="h-12 px-8 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-lg shadow-[0_0_30px_rgba(79,70,229,0.3)] transition-all hover:scale-105 hover:shadow-indigo-500/40">
+                     Get Started for Free <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+               </form>
+            )}
             
             <Button 
               onClick={scrollToDemo}
@@ -91,7 +134,26 @@ export default function LandingPage() {
           </div>
         </motion.div>
 
-        {/* Dashboard Preview Visual (Linked to View Demo) */}
+        {/* === How it Works Steps === */}
+        <div className="mt-24 grid md:grid-cols-3 gap-8 text-left relative z-20">
+           <StepCard 
+              num="01" 
+              title="Connect Gmail" 
+              desc="Log in securely with Google. We only scan for job-related emails." 
+           />
+           <StepCard 
+              num="02" 
+              title="Click 'Sync'" 
+              desc="Hit the sync button in the dashboard to fetch your applications instantly." 
+           />
+           <StepCard 
+              num="03" 
+              title="Get Hired" 
+              desc="Use AI to analyze offers, draft replies, and track your progress." 
+           />
+        </div>
+
+        {/* Dashboard Preview Visual (REAL MINI DASHBOARD) */}
         <motion.div 
            id="demo-section" 
            initial={{ opacity: 0, y: 40 }}
@@ -99,45 +161,118 @@ export default function LandingPage() {
            transition={{ duration: 0.8, delay: 0.2 }}
            className="mt-20 relative mx-auto max-w-5xl scroll-mt-24"
         >
-          <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 p-2 backdrop-blur-sm shadow-2xl">
-            <div className="rounded-lg overflow-hidden bg-zinc-950 aspect-[16/9] relative group border border-zinc-900">
+          {/* ✅ FIXED TOOLTIP POSITION: Now points to the mail icon */}
+          <div className="absolute top-[-30px] right-[55px] z-50 hidden md:block animate-bounce">
+             <div className="bg-indigo-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg mb-2">
+                Click here to Sync!
+             </div>
+             <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-indigo-600 mx-auto"></div>
+          </div>
+
+          <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 p-2 backdrop-blur-sm shadow-2xl relative">
+            <div className="rounded-lg overflow-hidden bg-zinc-950 aspect-[16/9] relative group border border-zinc-900 flex flex-col">
               
-              {/* Fake UI Content to look like the dashboard */}
-              <div className="absolute inset-0 p-6 flex flex-col">
-                <div className="flex justify-between items-center mb-6 border-b border-zinc-900 pb-4">
-                  <div className="w-32 h-6 bg-zinc-900 rounded-md"></div>
-                  <div className="flex gap-2">
-                    <div className="w-8 h-8 bg-zinc-900 rounded-full"></div>
-                    <div className="w-24 h-8 bg-indigo-900/20 rounded-md"></div>
-                  </div>
-                </div>
-                <div className="flex gap-4 mb-6">
-                   <div className="w-1/4 h-24 bg-zinc-900 rounded-lg"></div>
-                   <div className="w-1/4 h-24 bg-indigo-900/10 border border-indigo-900/20 rounded-lg"></div>
-                   <div className="w-1/4 h-24 bg-zinc-900 rounded-lg"></div>
-                   <div className="w-1/4 h-24 bg-zinc-900 rounded-lg"></div>
-                </div>
-                <div className="flex-1 bg-zinc-900/30 rounded-lg border border-zinc-900 p-4 space-y-3">
-                   <div className="w-full h-12 bg-zinc-900 rounded border border-zinc-800 flex items-center px-4">
-                      <div className="w-8 h-8 rounded bg-zinc-800 mr-4"></div>
-                      <div className="w-48 h-4 bg-zinc-800 rounded"></div>
-                   </div>
-                   <div className="w-full h-12 bg-zinc-900 rounded border border-zinc-800 flex items-center px-4 opacity-50"></div>
-                   <div className="w-full h-12 bg-zinc-900 rounded border border-zinc-800 flex items-center px-4 opacity-30"></div>
-                </div>
+              {/* === MINI DASHBOARD HEADER === */}
+              <div className="h-14 border-b border-zinc-800 flex items-center justify-between px-6 bg-zinc-900/50">
+                 <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-full bg-red-500/20 border border-red-500/50"></div>
+                    <div className="h-3 w-3 rounded-full bg-amber-500/20 border border-amber-500/50"></div>
+                    <div className="h-3 w-3 rounded-full bg-green-500/20 border border-green-500/50"></div>
+                 </div>
+                 <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black border border-zinc-800 text-xs text-zinc-400">
+                       <Search size={12} /> Search...
+                    </div>
+                    
+                    {/* FAKE SYNC BUTTON FOR DEMO */}
+                    <div className="p-2 rounded-full bg-indigo-500/20 border border-indigo-500/50 text-indigo-400 animate-pulse cursor-pointer hover:bg-indigo-500/30 transition-colors">
+                       <Mail size={14} />
+                    </div>
+
+                    <Bell size={14} className="text-zinc-500" />
+                    <div className="h-6 w-6 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500"></div>
+                 </div>
+              </div>
+
+              {/* === MINI DASHBOARD BODY === */}
+              <div className="flex-1 p-6 flex gap-6 overflow-hidden">
+                 
+                 {/* Sidebar (Left) */}
+                 <div className="w-48 hidden md:flex flex-col gap-2">
+                    <div className="px-3 py-2 rounded-lg bg-indigo-500/10 text-indigo-400 text-xs font-bold flex items-center gap-2 border border-indigo-500/20">
+                       <Sparkles size={12} /> Overview
+                    </div>
+                    <div className="px-3 py-2 rounded-lg hover:bg-white/5 text-zinc-500 text-xs font-medium flex items-center gap-2 transition-colors">
+                       <Mail size={12} /> Applications
+                    </div>
+                    <div className="px-3 py-2 rounded-lg hover:bg-white/5 text-zinc-500 text-xs font-medium flex items-center gap-2 transition-colors">
+                       <BrainCircuit size={12} /> AI Insights
+                    </div>
+                 </div>
+
+                 {/* Main Content (Right) */}
+                 <div className="flex-1 flex flex-col gap-6">
+                    
+                    {/* KPI Cards */}
+                    <div className="grid grid-cols-3 gap-4">
+                       <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800 relative overflow-hidden">
+                          <div className="text-[10px] uppercase text-zinc-500 font-bold mb-1">Total Applied</div>
+                          <div className="text-2xl font-bold text-white">124</div>
+                          <div className="absolute right-0 bottom-0 opacity-10"><Mail size={60}/></div>
+                       </div>
+                       <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800 relative overflow-hidden">
+                          <div className="text-[10px] uppercase text-indigo-400 font-bold mb-1">Interviews</div>
+                          <div className="text-2xl font-bold text-indigo-400">8</div>
+                          <div className="absolute right-0 bottom-0 opacity-10 text-indigo-500"><BrainCircuit size={60}/></div>
+                       </div>
+                       <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800 relative overflow-hidden">
+                          <div className="text-[10px] uppercase text-emerald-400 font-bold mb-1">Offers</div>
+                          <div className="text-2xl font-bold text-emerald-400">2</div>
+                          <div className="absolute right-0 bottom-0 opacity-10 text-emerald-500"><CheckCircle2 size={60}/></div>
+                       </div>
+                    </div>
+
+                    <div className="flex gap-6 flex-1 min-h-0">
+                       {/* Mock Chart */}
+                       <div className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col justify-between">
+                          <div className="flex justify-between items-center mb-4">
+                             <div className="text-xs font-bold text-zinc-400">Activity</div>
+                             <div className="text-[10px] text-zinc-600 bg-black px-2 py-1 rounded">Last 7 Days</div>
+                          </div>
+                          <div className="flex items-end justify-between gap-2 h-full px-2">
+                             {[30, 50, 40, 70, 50, 80, 60].map((h, i) => (
+                                <div key={i} className="w-full bg-indigo-500/20 rounded-t hover:bg-indigo-500/40 transition-colors relative group" style={{ height: `${h}%` }}>
+                                   <div className="absolute inset-x-0 bottom-0 h-1 bg-indigo-500/50"></div>
+                                </div>
+                             ))}
+                          </div>
+                       </div>
+
+                       {/* Mock List */}
+                       <div className="w-1/3 bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col gap-3">
+                          <div className="text-xs font-bold text-zinc-400 mb-1">Recent</div>
+                          {[
+                             { name: "Google", role: "Senior Dev", status: "Interview", color: "text-indigo-400 bg-indigo-500/10 border-indigo-500/20" },
+                             { name: "Vercel", role: "Design Eng", status: "Applied", color: "text-zinc-400 bg-zinc-800 border-zinc-700" },
+                             { name: "Netflix", role: "Frontend", status: "Offer", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" }
+                          ].map((item, i) => (
+                             <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-black/20 border border-zinc-800/50">
+                                <div>
+                                   <div className="text-xs font-bold text-white">{item.name}</div>
+                                   <div className="text-[10px] text-zinc-500">{item.role}</div>
+                                </div>
+                                <div className={`text-[9px] px-1.5 py-0.5 rounded border ${item.color} font-bold uppercase`}>{item.status}</div>
+                             </div>
+                          ))}
+                       </div>
+                    </div>
+
+                 </div>
               </div>
               
               {/* Overlay Gradient for depth */}
-              <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent opacity-60 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent opacity-40 pointer-events-none" />
               
-              {/* Center Text */}
-              <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-                <div className="bg-zinc-950/80 backdrop-blur-md px-6 py-3 rounded-full border border-zinc-800 shadow-xl">
-                  <p className="text-zinc-300 font-medium text-sm flex items-center gap-2">
-                    <CheckCircle2 size={16} className="text-indigo-500" /> Live Dashboard Preview
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
           {/* Glow Effect behind image */}
@@ -196,20 +331,43 @@ export default function LandingPage() {
           <p className="text-indigo-200 mb-8 max-w-xl mx-auto relative z-10">
             Join thousands of developers who are organizing their job search with AI.
           </p>
-          <Link href="/dashboard" className="relative z-10">
-            <Button size="lg" className="bg-white text-indigo-900 hover:bg-zinc-100 font-bold px-8 py-6 rounded-full text-lg shadow-xl transition-transform hover:scale-105">
-              Start Tracking Now
-            </Button>
-          </Link>
+          
+          <div className="relative z-10">
+            {user ? (
+               <Link href="/dashboard">
+                  <Button size="lg" className="bg-white text-indigo-900 hover:bg-zinc-100 font-bold px-8 py-6 rounded-full text-lg shadow-xl transition-transform hover:scale-105">
+                     Go to Dashboard
+                  </Button>
+               </Link>
+            ) : (
+               <form action={login}>
+                  <Button type="submit" size="lg" className="bg-white text-indigo-900 hover:bg-zinc-100 font-bold px-8 py-6 rounded-full text-lg shadow-xl transition-transform hover:scale-105">
+                     Start Tracking Now
+                  </Button>
+               </form>
+            )}
+          </div>
         </div>
       </section>
 
       {/* Footer */}
       <footer className="py-8 border-t border-zinc-900 text-center text-zinc-500 text-sm">
-        <p>© 2024 JobTracker AI. Built for developers.</p>
+        <p>© 2025 JobTracker AI. Built for developers.</p>
       </footer>
     </div>
   );
+}
+
+// --- SUBCOMPONENTS ---
+
+function StepCard({ num, title, desc }: any) {
+   return (
+      <div className="flex flex-col gap-2 p-6 rounded-2xl bg-zinc-900/20 border border-zinc-800/50 hover:bg-zinc-900/50 transition-colors">
+         <div className="text-4xl font-bold text-zinc-800 mb-2">{num}</div>
+         <h3 className="text-lg font-bold text-white">{title}</h3>
+         <p className="text-sm text-zinc-400 leading-relaxed">{desc}</p>
+      </div>
+   )
 }
 
 function FeatureCard({ icon, title, desc }: any) {

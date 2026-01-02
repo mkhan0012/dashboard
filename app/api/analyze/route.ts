@@ -138,15 +138,28 @@ export async function POST(req: Request) {
       `;
     } else {
       // Default: Analyze Email
+      // ✅ FIXED PROMPT: Now includes Company and Role context for better accuracy
       prompt = `
-        Analyze this job application email.
-        Snippet: "${snippet}"
-        Return JSON: { 
+        Analyze this job application status based on the context provided.
+        
+        Context:
+        - Company: "${company}"
+        - Role: "${subject}"
+        - Email Snippet: "${snippet || "No specific email content available."}"
+
+        Task:
+        1. Estimate the "probability" (0-100) of moving to the next interview stage based on the snippet tone. 
+           If the snippet is empty or neutral, give a reasoned estimate based on typical application flow.
+        2. Summarize the current status in 1 sentence.
+        3. Provide one concrete, actionable tip for this specific company/role.
+
+        Return a RAW JSON object (no markdown) with these exact keys:
+        { 
           "summary": "string", 
-          "probability": number, 
+          "probability": number (integer between 0 and 100), 
           "tone": "Positive" | "Neutral" | "Negative", 
           "tips": "string", 
-          "action": "string" 
+          "action": "string (e.g. 'Follow Up', 'Wait', 'Archive')" 
         }
       `;
     }
