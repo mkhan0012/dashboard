@@ -1,65 +1,128 @@
-import Image from "next/image";
+import connectDB from "@/lib/db";
+import Application from "@/models/Application";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
 
-export default function Home() {
+// 1. Define the Type for your Application data
+interface AppData {
+  _id: any; // Allow _id to be any type (ObjectId or string) to prevent errors
+  company: string;
+  role: string;
+  status: string;
+  emailDate: Date;
+  threadId: string;
+  snippet?: string;
+}
+
+export const dynamic = 'force-dynamic';
+
+export default async function Home() {
+  await connectDB();
+
+  // 2. Fetch and Force-Cast the data to your Type
+  const rawApps = await Application.find({}).sort({ emailDate: -1 }).lean();
+  const apps = rawApps as unknown as AppData[]; 
+
+  const stats = {
+    total: apps.length,
+    interview: apps.filter((a) => a.status === 'INTERVIEW').length,
+    rejected: apps.filter((a) => a.status === 'REJECTED').length,
+    applied: apps.filter((a) => a.status === 'APPLIED').length,
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div className="min-h-screen bg-zinc-50 p-8 space-y-8 font-sans">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold tracking-tight text-gray-900">Job Applications</h1>
+        <form action="/api/sync" method="POST">
+             <button type="submit" className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800 text-sm font-medium transition-colors">
+               Sync Emails
+             </button>
+        </form>
+      </div>
+      
+      {/* KPI Cards */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <KPICard title="Total" value={stats.total} />
+        <KPICard title="Interviews" value={stats.interview} className="text-blue-600" />
+        <KPICard title="Rejected" value={stats.rejected} className="text-red-600" />
+        <KPICard title="Waiting" value={stats.applied} className="text-gray-600" />
+      </div>
+
+      {/* List */}
+      <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
+        <table className="w-full text-sm text-left">
+          <thead className="bg-gray-50/50 border-b text-gray-500 uppercase text-xs tracking-wider">
+            <tr>
+              <th className="p-4 font-medium">Company</th>
+              <th className="p-4 font-medium">Role</th>
+              <th className="p-4 font-medium">Status</th>
+              <th className="p-4 font-medium">Date</th>
+              <th className="p-4 font-medium">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {apps.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="p-12 text-center text-gray-500">
+                  No applications found. Click <strong>Sync Emails</strong> to start.
+                </td>
+              </tr>
+            ) : (
+              // 3. Now 'app' is typed, so app._id is valid
+              apps.map((app) => (
+                <tr key={String(app._id)} className="border-b last:border-0 hover:bg-gray-50/80 transition-colors group">
+                  <td className="p-4 font-medium text-gray-900">{app.company}</td>
+                  <td className="p-4 text-gray-600">{app.role}</td>
+                  <td className="p-4">
+                    <StatusBadge status={app.status} />
+                  </td>
+                  <td className="p-4 text-gray-500">
+                    {new Date(app.emailDate).toLocaleDateString()}
+                  </td>
+                  <td className="p-4">
+                    <Link 
+                      href={`https://mail.google.com/mail/u/0/#inbox/${app.threadId}`} 
+                      target="_blank" 
+                      className="text-blue-600 hover:text-blue-800 font-medium opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      View
+                    </Link>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const styles: Record<string, string> = {
+    REJECTED: "bg-red-50 text-red-700 ring-1 ring-red-600/10",
+    INTERVIEW: "bg-blue-50 text-blue-700 ring-1 ring-blue-700/10",
+    OFFER: "bg-green-50 text-green-700 ring-1 ring-green-600/20",
+    APPLIED: "bg-gray-100 text-gray-600 ring-1 ring-gray-500/10",
+  };
+
+  return (
+    <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${styles[status] || styles.APPLIED}`}>
+      {status}
+    </span>
+  );
+}
+
+function KPICard({ title, value, className }: any) {
+  return (
+    <Card className="shadow-none">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className={`text-2xl font-bold ${className}`}>{value}</div>
+      </CardContent>
+    </Card>
   );
 }

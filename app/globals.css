@@ -1,26 +1,55 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@theme {
+  --color-background: #000000;
+  --color-foreground: #ffffff;
+  --color-card: #09090b;
+  --color-border: #27272a;
+  
+  /* Neon Accents */
+  --color-primary: #8b5cf6; /* Violet */
+  --color-secondary: #06b6d4; /* Cyan */
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: black;
+  color: white;
+  font-family: system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+  
+  /* Cyberpunk Grid Background */
+  background-image: 
+    linear-gradient(to right, #18181b 1px, transparent 1px),
+    linear-gradient(to bottom, #18181b 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-attachment: fixed;
 }
+
+/* Add a spotlight glow effect */
+.glow-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.15), transparent 60%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Glassmorphism Utility */
+.glass {
+  background: rgba(9, 9, 11, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-hover:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 10px; }
